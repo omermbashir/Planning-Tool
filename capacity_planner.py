@@ -751,12 +751,17 @@ def load_tasks(filepath, workstreams=None):
 
             # Total Days (current estimate, supports fractions)
             total_days = float(row["Total Days"])
+            if math.isnan(total_days):
+                print(f"  WARNING: Tasks row {row_num}: Total Days is blank, skipping.")
+                continue
 
             # Original Days — auto-fills from Total Days if blank
             original_days = total_days
             if "Original Days" in df.columns and pd.notna(row.get("Original Days")):
                 try:
                     original_days = float(row["Original Days"])
+                    if math.isnan(original_days):
+                        original_days = total_days
                 except (ValueError, TypeError):
                     pass  # fallback to total_days
 
@@ -1255,7 +1260,7 @@ def print_schedule_suggestions(tasks, team, allocation, weeks, available=None,
                                public_holidays=None, leave=None):
     """Analyse the schedule and print actionable suggestions."""
     suggestions = []
-    today = datetime.now()
+    today = norm_date(datetime.now())
 
     # Group tasks by person, sorted by start date
     person_tasks = {}
@@ -2054,29 +2059,31 @@ def render_roadmap(tasks, team, workstreams, output_path):
         ws_priority = ws_info["priority"]
         ws_pstyle = PRIORITY_STYLES.get(ws_priority, PRIORITY_STYLES["P2"])
 
-        # Density-based segments (weekly)
-        seg_start = data["start"]
+        # Density-based segments (weekly, aligned to Monday)
+        seg_start = get_week_start(data["start"])
         while seg_start <= data["end"]:
             seg_end = min(seg_start + timedelta(days=6), data["end"])
 
+            window_start = max(seg_start, data["start"])
+            window_end = min(seg_end, data["end"])
             active_count = sum(1 for d in data["day_counts"]
-                               if seg_start <= d <= seg_end)
+                               if window_start <= d <= window_end)
             max_possible = 5
             density_alpha = 0.25 + 0.65 * min(active_count / max(max_possible, 1), 1.0)
 
             s_num = mdates.date2num(seg_start)
             e_num = mdates.date2num(seg_end)
-            width = max(e_num - s_num, 1)
+            width = max(e_num - s_num + 1, 1)
 
             draw_rounded_bar(ax, s_num, y, width, 0.55, color,
                              alpha=density_alpha, edgecolor="none", linewidth=0, zorder=2)
 
-            seg_start = seg_end + timedelta(days=1)
+            seg_start += timedelta(days=7)
 
         # Full bar outline — linewidth varies by priority
         full_start = mdates.date2num(data["start"])
         full_end = mdates.date2num(data["end"])
-        full_width = max(full_end - full_start, 1)
+        full_width = max(full_end - full_start + 1, 1)
         draw_rounded_bar(ax, full_start, y, full_width, 0.55, "none",
                          alpha=1.0, edgecolor=color,
                          linewidth=ws_pstyle["linewidth"], zorder=3)

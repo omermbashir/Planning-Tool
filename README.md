@@ -80,7 +80,7 @@ SCHEDULE SUGGESTIONS:
 
 ### Requirements
 - Python 3.10+
-- matplotlib, openpyxl, pandas
+- matplotlib, numpy, openpyxl, pandas
 
 ### Install Dependencies
 ```bash

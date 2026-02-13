@@ -1,5 +1,6 @@
 # Output files (regenerated)
 output/
+test_output/
 
 # Excel data (user-maintained)
 capacity_data.xlsx

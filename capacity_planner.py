@@ -135,6 +135,8 @@ STYLE = {
     "holiday_edge_color": "#7B1FA2",   # Deep purple for holiday markers
 }
 
+_data_mtime = None  # Set in main() from Excel file mtime; read by add_header_footer()
+
 
 # ── Style Helpers ────────────────────────────────────────────────────────────
 
@@ -185,7 +187,7 @@ def add_header_footer(fig, title, subtitle="", data_mtime=None):
     fig.text(0.98, 0.008, f"Generated {datetime.now().strftime('%d %b %Y %H:%M')}",
              ha="right", fontsize=STYLE["small_size"], color=STYLE["text_muted"])
     footer_left = "Capacity Planning Tool"
-    mtime_str = data_mtime or STYLE.get("_data_mtime")
+    mtime_str = data_mtime or _data_mtime
     if mtime_str:
         footer_left += f"  \u00b7  Data updated {mtime_str}"
     fig.text(0.04, 0.008, footer_left,
@@ -683,6 +685,8 @@ def load_team(filepath):
         if days <= 0:
             print(f"  WARNING: Team row {idx + 2}: '{name}' has {days} days/week (should be positive), skipping.")
             continue
+        if days > 5:
+            print(f"  WARNING: Team row {idx + 2}: '{name}' has {days} days/week \u2014 did you mean 5?")
         team[name] = days
     return team
 
@@ -1169,12 +1173,12 @@ def calculate_monthly_capacity(tasks, team, public_holidays=None, leave=None):
                 _, num_days = monthrange(m.year, m.month)
                 for d in range(1, num_days + 1):
                     dt = datetime(m.year, m.month, d)
-                    if dt.weekday() < 5 and dt in person_leave:
+                    if dt.weekday() < 5 and dt in person_leave and (not public_holidays or dt not in public_holidays):
                         leave_days_in_month += 1
             # /5 = calendar weekdays (Mon-Fri). Scales part-time correctly:
             # e.g. 3 days/week person in a 22-workday month → (3/5)*22 = 13.2 available days
             # Leave days are subtracted after scaling
-            available[m][name] = (days_pw / 5) * wd - (days_pw / 5) * leave_days_in_month
+            available[m][name] = max(0.0, (days_pw / 5) * wd - (days_pw / 5) * leave_days_in_month)
 
     for task in tasks:
         person = task["assigned_to"]
@@ -2354,9 +2358,10 @@ def main():
 
     # Load
     print(f"Loading data from: {args.input}")
+    global _data_mtime
     try:
         mtime = datetime.fromtimestamp(os.path.getmtime(args.input))
-        STYLE["_data_mtime"] = mtime.strftime("%d %b %Y %H:%M")
+        _data_mtime = mtime.strftime("%d %b %Y %H:%M")
     except OSError:
         pass
     team, workstreams, tasks, public_holidays, leave, leave_entries = load_data(args.input)
@@ -2411,12 +2416,14 @@ def main():
     # Summary + schedule suggestions (capture output for summary.txt)
     summary_capture = io.StringIO()
     _orig_stdout = sys.stdout
-    sys.stdout = _TeeWriter(_orig_stdout, summary_capture)
-    print_summary(tasks, team, workstreams, allocation, weeks, available,
-                  public_holidays, leave, leave_entries)
-    print_schedule_suggestions(tasks, team, allocation, weeks, available,
-                               public_holidays, leave)
-    sys.stdout = _orig_stdout
+    try:
+        sys.stdout = _TeeWriter(_orig_stdout, summary_capture)
+        print_summary(tasks, team, workstreams, allocation, weeks, available,
+                      public_holidays, leave, leave_entries)
+        print_schedule_suggestions(tasks, team, allocation, weeks, available,
+                                   public_holidays, leave)
+    finally:
+        sys.stdout = _orig_stdout
     summary_text = summary_capture.getvalue()
 
     # Determine which charts
@@ -2445,6 +2452,7 @@ def main():
         output_files.append(roadmap_path)
 
     # Write summary.txt
+    os.makedirs(out_dir, exist_ok=True)
     summary_path = os.path.join(out_dir, "summary.txt")
     with open(summary_path, "w", encoding="utf-8") as sf:
         sf.write(summary_text)

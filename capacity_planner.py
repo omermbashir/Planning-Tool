@@ -1847,10 +1847,11 @@ def render_weekly(tasks, team, workstreams, allocation, weeks, available,
         if leave and person in leave:
             person_leave_dates = leave[person]
             for i, w in enumerate(weeks):
-                leave_days_this_week = sum(
-                    1 for offset in range(5)
-                    if datetime(w.year, w.month, w.day) + timedelta(days=offset) in person_leave_dates
-                )
+                leave_days_this_week = 0
+                for offset in range(5):
+                    day = datetime(w.year, w.month, w.day) + timedelta(days=offset)
+                    if day.weekday() < 5 and day in person_leave_dates and (not public_holidays or day not in public_holidays):
+                        leave_days_this_week += 1
                 if leave_days_this_week > 0:
                     ax.text(bar_x[i], -0.3, f"{leave_days_this_week}L",
                             ha="center", va="top", fontsize=5,
@@ -1890,7 +1891,7 @@ def render_weekly(tasks, team, workstreams, allocation, weeks, available,
             alpha=0.8, label="Leave (NL marker)"
         ))
 
-    ax.legend(handles=legend_handles, loc="upper right",
+    ax.legend(handles=legend_handles, loc="upper left",
               fontsize=STYLE["small_size"], framealpha=0.9,
               edgecolor=STYLE["grid_color"], fancybox=True)
 

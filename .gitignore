@@ -1,0 +1,19 @@
+# Output files (regenerated)
+output/
+
+# Excel data (contains personal work data)
+capacity_data.xlsx
+~$*.xlsx
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# IDE
+.vscode/
+*.code-workspace
+
+# OS
+Thumbs.db
+.DS_Store

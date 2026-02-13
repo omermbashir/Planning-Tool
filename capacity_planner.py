@@ -1817,13 +1817,13 @@ def render_weekly(tasks, team, workstreams, allocation, weeks, available,
             color=colors, alpha=0.85,
             edgecolor="white", linewidth=0.5,
             hatch=PERSON_HATCHES.get(pidx, ""),
-            label=person, zorder=3,
+            label=person, zorder=2,
         )
 
         # Per-person capacity line (dashed)
         ax.plot(bar_x, avail_values,
                 color=STYLE["under_capacity_colors"][pidx % len(STYLE["under_capacity_colors"])],
-                linewidth=1.5, linestyle="--", alpha=0.6, zorder=4,
+                linewidth=2.0, linestyle="--", alpha=0.7, zorder=5,
                 marker=".", markersize=3)
 
         # Utilisation % labels per person
@@ -1927,7 +1927,7 @@ def render_monthly_capacity(tasks, team, workstreams, output_path,
     fig, ax = plt.subplots(figsize=(max(14, n_months * 2.2), 8), facecolor=STYLE["bg_color"])
 
     x = np.arange(n_months)
-    bar_width = 0.7 / n_persons
+    bar_width = 0.75 / n_persons
 
     # Grouped bars per person (per-person over-capacity colouring)
     for pidx, person in enumerate(person_list):
@@ -1945,12 +1945,12 @@ def render_monthly_capacity(tasks, team, workstreams, output_path,
 
         ax.bar(x + offset, allocated, bar_width * 0.88,
                color=colors, alpha=0.85, edgecolor="white", linewidth=0.5,
-               hatch=PERSON_HATCHES.get(pidx, ""), label=person)
+               hatch=PERSON_HATCHES.get(pidx, ""), label=person, zorder=2)
 
     # Available capacity line
     total_avail_line = [sum(available[m].values()) for m in months]
     ax.plot(x, total_avail_line, color=STYLE["capacity_line_color"],
-            linewidth=2, linestyle="--", marker="o", markersize=5,
+            linewidth=2.5, linestyle="--", marker="o", markersize=5,
             label="Available capacity", zorder=5)
 
     # Utilisation % labels
@@ -1966,8 +1966,7 @@ def render_monthly_capacity(tasks, team, workstreams, output_path,
 
     ax.set_xticks(x)
     ax.set_xticklabels([m.strftime("%b %Y") for m in months], fontsize=STYLE["tick_size"])
-    ax.legend(loc="upper right", fontsize=STYLE["small_size"], framealpha=0.9,
-              edgecolor=STYLE["grid_color"], fancybox=True)
+    ax.legend(loc="upper left", fontsize=STYLE["small_size"], frameon=False)
 
     # Annotate months with significant leave
     if leave:
@@ -1979,7 +1978,7 @@ def render_monthly_capacity(tasks, team, workstreams, output_path,
                     _, num_days = monthrange(m.year, m.month)
                     for d in range(1, num_days + 1):
                         dt = datetime(m.year, m.month, d)
-                        if dt.weekday() < 5 and dt in person_leave:
+                        if dt.weekday() < 5 and dt in person_leave and (not public_holidays or dt not in public_holidays):
                             total_leave += 1
             if total_leave >= 3:  # Only annotate if 3+ leave days in month
                 ax.text(i, -2, f"{total_leave}d leave",
@@ -2017,8 +2016,9 @@ def render_roadmap(tasks, team, workstreams, output_path):
 
     active_workstreams = [name for name, _ in ws_order_items if name in ws_data]
     n_workstreams = len(active_workstreams)
+    y_gap = 1.2  # Vertical spacing between swim lanes
 
-    fig, ax = plt.subplots(figsize=(STYLE["fig_width"], max(6, n_workstreams * 1.1 + 3)),
+    fig, ax = plt.subplots(figsize=(STYLE["fig_width"], max(6, n_workstreams * 1.3 + 3)),
                            facecolor=STYLE["bg_color"])
 
     all_starts = [ws_data[s]["start"] for s in active_workstreams]
@@ -2029,20 +2029,21 @@ def render_roadmap(tasks, team, workstreams, output_path):
     # Alternating row shading
     for i in range(n_workstreams):
         shade = STYLE["row_shade_even"] if i % 2 == 0 else STYLE["row_shade_odd"]
-        ax.axhspan(i - 0.5, i + 0.5, color=shade, alpha=0.6, zorder=0)
+        y_center = i * y_gap
+        ax.axhspan(y_center - y_gap / 2, y_center + y_gap / 2, color=shade, alpha=0.6, zorder=0)
 
     # Quarter boundaries
     q_starts = get_quarter_boundaries(chart_start, chart_end)
     for qs in q_starts:
         qs_num = mdates.date2num(qs)
         ax.axvline(qs_num, color=STYLE["grid_color"], linewidth=1.2, linestyle="-", alpha=0.5, zorder=1)
-        ax.text(qs_num + 2, n_workstreams - 0.2, get_quarter_label(qs),
+        ax.text(qs_num + 2, (n_workstreams - 1) * y_gap + y_gap * 0.3, get_quarter_label(qs),
                 fontsize=STYLE["tick_size"] + 1, color=STYLE["text_muted"],
                 fontweight="bold", va="bottom", ha="left", zorder=6)
 
     # Draw workstream bars
     for idx, ws_name in enumerate(reversed(active_workstreams)):
-        y = idx
+        y = idx * y_gap
         data = ws_data[ws_name]
         ws_info = workstreams[ws_name]
         color = ws_info["color"]
@@ -2100,7 +2101,7 @@ def render_roadmap(tasks, team, workstreams, output_path):
         ws_priority = workstreams[ws_name]["priority"]
         y_labels.append(f"{ws_priority}  {ws_name}")
 
-    ax.set_yticks(range(n_workstreams))
+    ax.set_yticks([i * y_gap for i in range(n_workstreams)])
     ax.set_yticklabels(y_labels, fontsize=STYLE["label_size"])
     for tick_label, ws_name in zip(ax.get_yticklabels(), reversed(active_workstreams)):
         tick_label.set_color(workstreams[ws_name]["color"])
@@ -2112,7 +2113,7 @@ def render_roadmap(tasks, team, workstreams, output_path):
     ax.set_xlim(mdates.date2num(chart_start), mdates.date2num(chart_end))
     plt.setp(ax.xaxis.get_majorticklabels(), fontsize=STYLE["tick_size"])
 
-    draw_today_line(ax, chart_start, chart_end, n_workstreams - 0.3)
+    draw_today_line(ax, chart_start, chart_end, (n_workstreams - 1) * y_gap + y_gap * 0.3)
     style_axes(ax, title="Strategic Roadmap")
 
     # Legend

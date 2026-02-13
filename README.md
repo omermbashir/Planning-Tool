@@ -73,6 +73,7 @@ SCHEDULE SUGGESTIONS:
     output/capacity_weekly.png
     output/capacity_monthly.png
     output/roadmap.png
+    output/summary.txt
 ```
 
 ## Setup
@@ -242,4 +243,5 @@ output/
   capacity_weekly.png  # Weekly capacity per person
   capacity_monthly.png # Monthly capacity utilisation
   roadmap.png          # Strategic roadmap swim lanes
+  summary.txt          # Executive summary + schedule suggestions
 ```

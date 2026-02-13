@@ -278,8 +278,8 @@ Both sheets are optional. If you don't have any holidays or leave to track, simp
 - Each task is a coloured bar spanning its working days, labelled with duration in working days (e.g. "12.5 wd")
 - Weekend shading (light grey vertical bands) for visual rhythm
 - Hatch patterns distinguish team members
-- Status symbols: `>` In Progress, `-` Planned, checkmark Complete, `||` On Hold
-- Today line (red dashed vertical line)
+- Status symbols: `•` In Progress, `–` Planned, `✔` Complete, `‖` On Hold
+- Today line (solid red vertical line)
 - Public holiday dotted lines (purple)
 - Leave day triangle markers (▼) above task rows
 - Deadline diamond markers (red ◆) — red overshoot tint if task extends past deadline
@@ -345,6 +345,7 @@ After chart generation, prints which files were written:
     output/capacity_weekly.png
     output/capacity_monthly.png
     output/roadmap.png
+    output/summary.txt
 ```
 
 ---

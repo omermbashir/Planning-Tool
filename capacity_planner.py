@@ -879,6 +879,11 @@ def load_leave(filepath):
                 continue
             start = parse_date(row["Start Date"], context=f"Leave row {row_num}, 'Start Date'")
             end = parse_date(row["End Date"], context=f"Leave row {row_num}, 'End Date'")
+            if end < start:
+                print(f"  WARNING: Leave row {row_num}: End Date {end.strftime('%Y-%m-%d')} is before "
+                      f"Start Date {start.strftime('%Y-%m-%d')}. Skipping.")
+                continue
+
             leave_type = clean_str(row.get("Type", "")) or "Other"
             notes = clean_str(row.get("Notes", ""))
 
@@ -972,8 +977,8 @@ def validate_data(team, workstreams, tasks, public_holidays=None, leave=None):
             errors.append(f"Row {row}: Invalid start date '{task['start_date']}'. Use YYYY-MM-DD format.")
 
         if task["total_days"] <= 0:
-            errors.append(f"Row {row}: Task '{task['task']}' has {task['total_days']} days "
-                          f"(must be positive). Skipping this task.")
+            warnings.append(f"Row {row}: Task '{task['task']}' has {task['total_days']} days "
+                            f"(must be positive). Skipping this task.")
             task["_skip"] = True
 
         if task["status"] not in STATUS_VALUES:
@@ -1000,6 +1005,11 @@ def validate_data(team, workstreams, tasks, public_holidays=None, leave=None):
         if task.get("deadline") and isinstance(task["start_date"], datetime):
             if task["deadline"] < task["start_date"]:
                 warnings.append(f"Row {row}: Deadline ({task['deadline'].strftime('%Y-%m-%d')}) is before start date.")
+
+        # Validate actual end date
+        if task.get("actual_end") and isinstance(task["start_date"], datetime):
+            if task["actual_end"] < task["start_date"]:
+                warnings.append(f"Row {row}: Actual End ({task['actual_end'].strftime('%Y-%m-%d')}) is before start date.")
 
     # Remove tasks with non-positive days (they'd crash the scheduler)
     tasks[:] = [t for t in tasks if not t.get("_skip")]
@@ -1282,7 +1292,7 @@ def print_schedule_suggestions(tasks, team, allocation, weeks, available=None,
                     public_holidays, person_leave)
                 if days_early > 0:
                     subsequent = [st for st in person_tasks.get(person, [])
-                                  if st["start_date"] > t["start_date"]
+                                  if st["start_date"] > planned_end
                                   and st["status"] in ("Planned", "In Progress")
                                   and st["task"] != t["task"]]
                     if subsequent:

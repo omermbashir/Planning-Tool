@@ -1,7 +1,7 @@
 # Output files (regenerated)
 output/
 
-# Excel data (contains personal work data)
+# Excel data (user-maintained)
 capacity_data.xlsx
 ~$*.xlsx
 

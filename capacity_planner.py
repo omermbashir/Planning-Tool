@@ -249,7 +249,7 @@ def norm_date(d):
 
 def clean_str(val):
     """Return stripped string or empty string for NaN/None."""
-    if val is None or (isinstance(val, float) and math.isnan(val)):
+    if val is None or pd.isna(val):
         return ""
     return str(val).strip()
 
@@ -681,6 +681,9 @@ def load_team(filepath):
             days = float(row["Days Per Week"])
         except (ValueError, TypeError):
             print(f"  WARNING: Team row {idx + 2}: invalid Days Per Week for '{name}', skipping.")
+            continue
+        if math.isnan(days):
+            print(f"  WARNING: Team row {idx + 2}: '{name}' Days Per Week is blank, skipping.")
             continue
         if days <= 0:
             print(f"  WARNING: Team row {idx + 2}: '{name}' has {days} days/week (should be positive), skipping.")

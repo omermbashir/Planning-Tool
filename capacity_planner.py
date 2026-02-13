@@ -196,7 +196,7 @@ def add_header_footer(fig, title, subtitle="", data_mtime=None):
 
 def draw_today_line(ax, date_min, date_max, y_top):
     """Draw a styled 'Today' marker if today falls within the date range."""
-    today = datetime.now()
+    today = norm_date(datetime.now())
     today_num = mdates.date2num(today)
     min_num = mdates.date2num(date_min)
     max_num = mdates.date2num(date_max)
@@ -465,7 +465,7 @@ def generate_template(output_path):
         ws_tasks.cell(row=row_idx, column=11).alignment = Alignment(horizontal="center", vertical="center")
 
     # ── Data Validations on Tasks sheet ──
-    max_task_row = 100  # allow room for future rows
+    max_task_row = 500  # allow room for future rows
 
     # Status dropdown
     dv_status = DataValidation(type="list", formula1='"Planned,In Progress,Complete,On Hold"', allow_blank=False)
@@ -482,14 +482,14 @@ def generate_template(output_path):
     dv_task_priority.add(f"G2:G{max_task_row}")
 
     # Workstream dropdown (range-based to avoid 255-char limit with long names)
-    dv_workstream = DataValidation(type="list", formula1="=Workstreams!$A$2:$A$100", allow_blank=False)
+    dv_workstream = DataValidation(type="list", formula1="=Workstreams!$A$2:$A$500", allow_blank=False)
     dv_workstream.error = "Please select a valid workstream"
     dv_workstream.errorTitle = "Invalid Workstream"
     ws_tasks.add_data_validation(dv_workstream)
     dv_workstream.add(f"B2:B{max_task_row}")
 
     # Assigned To dropdown (range-based to avoid 255-char limit)
-    dv_assigned = DataValidation(type="list", formula1="=Team!$A$2:$A$50", allow_blank=False)
+    dv_assigned = DataValidation(type="list", formula1="=Team!$A$2:$A$200", allow_blank=False)
     dv_assigned.error = "Please select a team member"
     dv_assigned.errorTitle = "Invalid Team Member"
     ws_tasks.add_data_validation(dv_assigned)
@@ -612,7 +612,7 @@ def generate_template(output_path):
     max_leave_row = 100
 
     # Person dropdown on Leave sheet (range-based)
-    dv_leave_person = DataValidation(type="list", formula1="=Team!$A$2:$A$50", allow_blank=False)
+    dv_leave_person = DataValidation(type="list", formula1="=Team!$A$2:$A$200", allow_blank=False)
     dv_leave_person.error = "Please select a team member"
     dv_leave_person.errorTitle = "Invalid Person"
     ws_leave.add_data_validation(dv_leave_person)
@@ -1562,7 +1562,7 @@ def render_gantt(tasks, team, workstreams, weeks, output_path,
 
             # Blocked info (no artificial cap on blocked duration)
             if is_on_hold:
-                today = datetime.now()
+                today = norm_date(datetime.now())
                 person_leave_set = leave.get(task["assigned_to"], set()) if leave else None
                 blocked_days = count_working_days(
                     task["start_date"], today, public_holidays, person_leave_set)
@@ -2377,6 +2377,9 @@ def main():
         except ValueError:
             print(f"  ERROR: Invalid --to date '{args.date_to}'. Use YYYY-MM-DD format.")
             sys.exit(1)
+    if date_from and date_to and date_from > date_to:
+        print(f"  ERROR: --from ({date_from:%Y-%m-%d}) is after --to ({date_to:%Y-%m-%d}). Swap them?")
+        sys.exit(1)
 
     # Load
     print(f"Loading data from: {args.input}")

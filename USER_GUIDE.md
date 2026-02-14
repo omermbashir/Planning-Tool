@@ -52,7 +52,7 @@ This reads your Excel data and produces four PNG files in the `output/` folder, 
 | **Priority** | No | P1-P4. **Inherits from workstream if left blank.** Only fill when a task differs from its workstream. | `P2` |
 | **Status** | Yes | One of: `Planned`, `In Progress`, `Complete`, `On Hold`. Defaults to `Planned` if blank. | `In Progress` |
 | **Actual End** | No | Date the task actually finished. Only relevant for Complete tasks. | `2026-03-14` |
-| **Blocked By** | No | Free text explaining what's blocking an On Hold task. | `Waiting on Data Eng` |
+| **Blocked By** | No | Free text explaining what's blocking the task. Works with any status — On Hold shows blocked duration, Planned/In Progress shows BLOCKED warning. | `Waiting on Data Eng` |
 | **Deadline** | No | Hard delivery date. Shows red diamond on Gantt, console warning if task overshoots. | `2026-03-31` |
 | **Confidence** | No | Estimate quality: `High`, `Medium`, or `Low`. Shows coloured dot on Gantt. | `Medium` |
 | **Notes** | No | Any additional context. | `Scope increased after review` |
@@ -209,14 +209,17 @@ If you leave Actual End blank for a Complete task, it just shows a single faded 
 1. Change Status to `On Hold` in Excel
 2. Optionally fill **Blocked By** with the reason (e.g. "Waiting on Data Eng", "Depends on Platform team")
 
+You can also fill **Blocked By** on tasks that are `Planned` or `In Progress` — for example, when a task is partially blocked but work continues. The tool will show a BLOCKED warning in schedule suggestions and a "Blocked:" label on the Gantt.
+
 ### How to unblock
 1. Change Status back to `In Progress` (or `Planned` if work hasn't started yet)
-2. Adjust the Start Date if the block has pushed it back
+2. Clear the **Blocked By** field
+3. Adjust the Start Date if the block has pushed it back
 
 ### What you'll see
-- **Gantt chart**: Blue-grey cross-hatched bar with dashed border. Blocked duration and reason shown in the label. No artificial cap — a task blocked for 15 days on a 5-day estimate shows the full 15 days.
+- **Gantt chart**: On Hold tasks show as blue-grey cross-hatched bars with dashed border. Blocked duration and reason shown in the label. No artificial cap — a task blocked for 15 days on a 5-day estimate shows the full 15 days. Planned/In Progress tasks with Blocked By show a "Blocked:" label.
 - **Roadmap**: Warning marker at the blocked task's position within the workstream swim lane.
-- **Console**: `{task} has been on hold for N working days` with the blocker reason.
+- **Console**: On Hold: `{task} has been on hold for N working days` with the blocker reason. Planned/In Progress with Blocked By: `BLOCKED: {task} — {reason}`.
 
 ---
 
@@ -334,6 +337,7 @@ Printed after the summary if any suggestions are detected:
 - **Early finishers**: recommends pulling forward subsequent tasks
 - **Overdue warnings**: flags In Progress tasks past their planned end
 - **Blocked duration**: shows how long On Hold tasks have been blocked (no artificial cap)
+- **Blocked tasks**: flags Planned/In Progress tasks with Blocked By filled
 - **Leave overlaps**: warns when a person has leave during an active task
 - **Spare capacity**: highlights future weeks where a person has 3+ free days (capped at 5 entries, uses leave-adjusted availability)
 

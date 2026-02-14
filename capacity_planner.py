@@ -609,7 +609,7 @@ def generate_template(output_path):
         ws_leave.cell(row=row_idx, column=2).alignment = Alignment(horizontal="center", vertical="center")
         ws_leave.cell(row=row_idx, column=3).alignment = Alignment(horizontal="center", vertical="center")
 
-    max_leave_row = 100
+    max_leave_row = 500
 
     # Person dropdown on Leave sheet (range-based)
     dv_leave_person = DataValidation(type="list", formula1="=Team!$A$2:$A$200", allow_blank=False)
@@ -640,6 +640,14 @@ def generate_template(output_path):
         type_range,
         CellIsRule(operator="equal", formula=['"Training"'],
                    font=Font(color="E65100"), fill=PatternFill(bgColor="FFE0B2")))
+    ws_leave.conditional_formatting.add(
+        type_range,
+        CellIsRule(operator="equal", formula=['"Conference"'],
+                   font=Font(color="0D47A1"), fill=PatternFill(bgColor="BBDEFB")))
+    ws_leave.conditional_formatting.add(
+        type_range,
+        CellIsRule(operator="equal", formula=['"Other"'],
+                   font=Font(color="424242"), fill=PatternFill(bgColor="EEEEEE")))
 
     wb.save(output_path)
     print(f"Template created: {output_path}")
@@ -656,6 +664,27 @@ def generate_template(output_path):
 
 # ── Data Loading ─────────────────────────────────────────────────────────────
 
+def normalize_columns(df, expected):
+    """Case-insensitive column matching. Renames df columns to expected names.
+    Returns set of expected names that were NOT found (missing columns)."""
+    df.columns = df.columns.str.strip()
+    # Build mapping: casefolded actual name → original actual name
+    actual_map = {c.casefold(): c for c in df.columns}
+    rename_map = {}
+    missing = set()
+    for name in expected:
+        if name in df.columns:
+            continue  # exact match, no rename needed
+        folded = name.casefold()
+        if folded in actual_map:
+            rename_map[actual_map[folded]] = name
+        else:
+            missing.add(name)
+    if rename_map:
+        df.rename(columns=rename_map, inplace=True)
+    return missing
+
+
 def load_team(filepath):
     """Load team members from the 'Team' sheet."""
     try:
@@ -665,9 +694,8 @@ def load_team(filepath):
         return {}
     if df.empty:
         return {}
-    df.columns = df.columns.str.strip()
     required = {"Name", "Days Per Week"}
-    missing = required - set(df.columns)
+    missing = normalize_columns(df, required)
     if missing:
         print(f"  ERROR: Team sheet is missing column(s): {', '.join(sorted(missing))}. "
               f"Found: {', '.join(df.columns)}")
@@ -690,6 +718,9 @@ def load_team(filepath):
             continue
         if days > 5:
             print(f"  WARNING: Team row {idx + 2}: '{name}' has {days} days/week \u2014 did you mean 5?")
+        if name in team:
+            print(f"  WARNING: Team row {idx + 2}: duplicate name '{name}' \u2014 using first occurrence, ignoring this row.")
+            continue
         team[name] = days
     return team
 
@@ -703,11 +734,11 @@ def load_workstreams(filepath):
         return {}
     if df.empty:
         return {}
-    df.columns = df.columns.str.strip()
     required = {"Workstream", "Color"}
-    missing = required - set(df.columns)
-    if missing:
-        print(f"  ERROR: Workstreams sheet is missing column(s): {', '.join(sorted(missing))}. "
+    optional = {"Priority"}
+    missing = normalize_columns(df, required | optional)
+    if missing & required:
+        print(f"  ERROR: Workstreams sheet is missing column(s): {', '.join(sorted(missing & required))}. "
               f"Found: {', '.join(df.columns)}")
         return {}
     workstreams = {}
@@ -719,6 +750,9 @@ def load_workstreams(filepath):
         priority = clean_str(row.get("Priority", "")) or "P2"
         if priority not in PRIORITY_VALUES:
             priority = "P2"
+        if name in workstreams:
+            print(f"  WARNING: Workstreams row {idx + 2}: duplicate workstream '{name}' \u2014 using first occurrence, ignoring this row.")
+            continue
         workstreams[name] = {"color": color, "priority": priority}
     return workstreams
 
@@ -732,11 +766,13 @@ def load_tasks(filepath, workstreams=None):
         return []
     if df.empty:
         return []
-    df.columns = df.columns.str.strip()
     required = {"Task", "Workstream", "Assigned To", "Start Date", "Total Days", "Status"}
-    missing = required - set(df.columns)
-    if missing:
-        print(f"  ERROR: Tasks sheet is missing column(s): {', '.join(sorted(missing))}. "
+    optional = {"Original Days", "Priority", "Actual End", "Blocked By", "Deadline",
+                "Confidence", "Notes"}
+    missing = normalize_columns(df, required | optional)
+    missing_required = missing & required
+    if missing_required:
+        print(f"  ERROR: Tasks sheet is missing column(s): {', '.join(sorted(missing_required))}. "
               f"Found: {', '.join(df.columns)}")
         return []
     tasks = []
@@ -833,7 +869,7 @@ def load_public_holidays(filepath):
         return set()
     if df.empty:
         return set()
-    df.columns = df.columns.str.strip()
+    normalize_columns(df, {"Date", "Name"})
     if "Date" not in df.columns:
         print("  WARNING: Public Holidays sheet has no 'Date' column, skipping.")
         return set()
@@ -849,7 +885,7 @@ def load_public_holidays(filepath):
     return holidays
 
 
-def load_leave(filepath):
+def load_leave(filepath, public_holidays=None):
     """Load leave entries from the Excel file.
     Returns (leave_dates, leave_entries) where:
       leave_dates = dict[str, set[datetime]] (person -> leave dates for scheduling)
@@ -862,11 +898,12 @@ def load_leave(filepath):
         return {}, []
     if df.empty:
         return {}, []
-    df.columns = df.columns.str.strip()
     required = {"Person", "Start Date", "End Date"}
-    missing = required - set(df.columns)
-    if missing:
-        print(f"  WARNING: Leave sheet is missing column(s): {', '.join(sorted(missing))}. Skipping.")
+    optional = {"Type", "Notes"}
+    missing = normalize_columns(df, required | optional)
+    missing_required = missing & required
+    if missing_required:
+        print(f"  WARNING: Leave sheet is missing column(s): {', '.join(sorted(missing_required))}. Skipping.")
         return {}, []
 
     leave_dates = {}
@@ -892,8 +929,9 @@ def load_leave(filepath):
                 leave_dates[person] = set()
             current = start
             days_count = 0
+            ph = public_holidays or set()
             while current <= end:
-                if current.weekday() < 5:
+                if current.weekday() < 5 and norm_date(current) not in ph:
                     leave_dates[person].add(norm_date(current))
                     days_count += 1
                 current += timedelta(days=1)
@@ -917,7 +955,7 @@ def load_data(filepath):
     workstreams = load_workstreams(filepath)
     tasks = load_tasks(filepath, workstreams=workstreams)
     public_holidays = load_public_holidays(filepath)
-    leave_dates, leave_entries = load_leave(filepath)
+    leave_dates, leave_entries = load_leave(filepath, public_holidays=public_holidays)
 
     # Print load summary for leave/holidays
     if public_holidays:
@@ -982,8 +1020,8 @@ def validate_data(team, workstreams, tasks, public_holidays=None, leave=None):
             task["_skip"] = True
 
         if task["status"] not in STATUS_VALUES:
-            warnings.append(f"Row {row}: Status '{task['status']}' not recognised. "
-                            f"Valid: {', '.join(STATUS_VALUES)}")
+            errors.append(f"Row {row}: Status '{task['status']}' not recognised. "
+                          f"Valid: {', '.join(STATUS_VALUES)}")
 
         if task["priority"] not in PRIORITY_VALUES:
             warnings.append(f"Row {row}: Priority '{task['priority']}' not recognised. "
@@ -1075,12 +1113,15 @@ def calculate_schedule(tasks, public_holidays=None, leave=None):
         task["end_date"] = end_date
         task["working_days"] = working_days
         task["day_allocations"] = day_allocations
+        task["planned_working_days"] = len(working_days)
 
         # Compute actual end date info for Complete tasks with Actual End
         if task["status"] == "Complete" and task["actual_end"]:
             ae = task["actual_end"]
             while not is_working_day(ae, public_holidays, person_leave):
                 ae -= timedelta(days=1)
+            if ae < start:
+                ae = start
             task["actual_end_date"] = ae
 
             # Count working days between start and actual end
@@ -1091,6 +1132,21 @@ def calculate_schedule(tasks, public_holidays=None, leave=None):
                     actual_wd += 1
                 d += timedelta(days=1)
             task["actual_working_days"] = actual_wd
+
+            # Adjust capacity data to match actual completion date.
+            # Planned end_date is preserved for drift reporting.
+            if ae < task["end_date"]:
+                # Early finish — trim to actual end
+                task["working_days"] = [d for d in task["working_days"] if d <= ae]
+                task["day_allocations"] = {d: v for d, v in task["day_allocations"].items() if d <= ae}
+            elif ae > task["end_date"]:
+                # Late finish — extend working_days and day_allocations to actual end
+                d = task["end_date"] + timedelta(days=1)
+                while d <= ae:
+                    if is_working_day(d, public_holidays, person_leave):
+                        task["working_days"].append(d)
+                        task["day_allocations"][d] = 1.0
+                    d += timedelta(days=1)
         else:
             task["actual_end_date"] = None
             task["actual_working_days"] = None
@@ -1143,6 +1199,8 @@ def calculate_capacity(tasks, team, public_holidays=None, leave=None):
             available[w][name] = (days_pw / 5) * working_days_this_week
 
     for task in tasks:
+        if task["status"] == "On Hold":
+            continue
         person = task["assigned_to"]
         if person not in team:
             continue
@@ -1199,6 +1257,8 @@ def calculate_monthly_capacity(tasks, team, public_holidays=None, leave=None):
             available[m][name] = max(0.0, (days_pw / 5) * wd - (days_pw / 5) * leave_days_in_month)
 
     for task in tasks:
+        if task["status"] == "On Hold":
+            continue
         person = task["assigned_to"]
         if person not in team:
             continue
@@ -1220,7 +1280,11 @@ def aggregate_workstreams(tasks, workstreams):
         if not ws_tasks:
             continue
         earliest_start = min(t["start_date"] for t in ws_tasks)
-        latest_end = max(t["end_date"] for t in ws_tasks)
+        latest_end = max(
+            t["actual_end_date"] if t["status"] == "Complete" and t.get("actual_end_date")
+            else t["end_date"]
+            for t in ws_tasks
+        )
 
         day_counts = {}
         for t in ws_tasks:
@@ -1228,8 +1292,10 @@ def aggregate_workstreams(tasks, workstreams):
                 day_counts[wd] = day_counts.get(wd, 0) + 1
 
         task_starts = [(t["start_date"], t["task"]) for t in ws_tasks]
-        has_blocked = any(t["status"] == "On Hold" for t in ws_tasks)
-        blocked_tasks = [t for t in ws_tasks if t["status"] == "On Hold"]
+        blocked_tasks = [t for t in ws_tasks
+                         if t["status"] == "On Hold"
+                         or (t.get("blocked_by") and t["status"] != "Complete")]
+        has_blocked = bool(blocked_tasks)
 
         ws_data[ws_name] = {
             "start": earliest_start,
@@ -1292,7 +1358,7 @@ def print_schedule_suggestions(tasks, team, allocation, weeks, available=None,
                     public_holidays, person_leave)
                 if days_early > 0:
                     subsequent = [st for st in person_tasks.get(person, [])
-                                  if st["start_date"] > planned_end
+                                  if st["start_date"] > actual_end
                                   and st["status"] in ("Planned", "In Progress")
                                   and st["task"] != t["task"]]
                     if subsequent:
@@ -1327,6 +1393,12 @@ def print_schedule_suggestions(tasks, team, allocation, weeks, available=None,
             if t["blocked_by"]:
                 msg += f"\n    Blocked by: {t['blocked_by']}"
             suggestions.append(msg)
+
+    # 3b. Blocked tasks (not On Hold) — tasks with Blocked By that are still active
+    for t in tasks:
+        if t.get("blocked_by") and t["status"] in ("Planned", "In Progress"):
+            suggestions.append(
+                f"  BLOCKED: {t['task']} ({t['assigned_to']}) \u2014 {t['blocked_by']}")
 
     # 4. Leave overlaps — warn when a person has leave during an active task
     if leave:
@@ -1518,8 +1590,8 @@ def render_gantt(tasks, team, workstreams, weeks, output_path,
                                  alpha=0.45, edgecolor=ws_color,
                                  linewidth=1.2, hatch=hatch, zorder=3)
 
-                # Variance label
-                planned_wd = len(task.get("working_days", []))
+                # Variance label (use planned count preserved before trimming)
+                planned_wd = task.get("planned_working_days", len(task.get("working_days", [])))
                 actual_wd = task.get("actual_working_days", planned_wd)
                 diff = actual_wd - planned_wd
                 if diff > 0:
@@ -1570,6 +1642,8 @@ def render_gantt(tasks, team, workstreams, weeks, output_path,
                 if task["blocked_by"]:
                     blocked_label = f"On Hold: {task['blocked_by']} ({blocked_days}d)"
                 label_parts.append(blocked_label)
+            elif task.get("blocked_by") and not is_complete:
+                label_parts.append(f"Blocked: {task['blocked_by']}")
 
             label_text = " ".join(label_parts)
 
@@ -1608,7 +1682,7 @@ def render_gantt(tasks, team, workstreams, weeks, output_path,
                     bar_end + 0.5, y_pos, label_text,
                     va="center", ha="left",
                     fontsize=label_size, fontweight=label_weight,
-                    color=label_color, clip_on=True, zorder=5,
+                    color=label_color, clip_on=False, zorder=5,
                 )
 
                 # Coloured drift text (separate, positioned after main label)
@@ -1619,27 +1693,30 @@ def render_gantt(tasks, team, workstreams, weeks, output_path,
                         drift_x, y_pos - 0.22, drift_text,
                         va="center", ha="left",
                         fontsize=label_size - 0.5, fontweight="bold",
-                        color=drift_color, clip_on=True, zorder=5,
+                        color=drift_color, clip_on=False, zorder=5,
                     )
 
-            # ── Confidence dot ──
-            if task.get("confidence") and task["confidence"] in CONFIDENCE_COLORS:
+            # ── Confidence dot (skip Complete/On Hold — outcome known or task paused) ──
+            if (task.get("confidence") and task["confidence"] in CONFIDENCE_COLORS
+                    and task["status"] not in ("Complete", "On Hold")):
                 conf_color = CONFIDENCE_COLORS[task["confidence"]]
                 ax_gantt.plot(start_num - 0.8, y_pos, "o",
                               color=conf_color, markersize=5, zorder=6,
                               markeredgecolor="white", markeredgewidth=0.5)
 
-            # ── Deadline marker ──
-            if task.get("deadline"):
+            # ── Deadline marker (skip On Hold — task paused) ──
+            if task.get("deadline") and task["status"] != "On Hold":
                 deadline_num = mdates.date2num(task["deadline"])
                 if mdates.date2num(date_min) <= deadline_num <= mdates.date2num(date_max):
                     ax_gantt.plot(deadline_num, y_pos, "D",
                                   color="#D32F2F", markersize=6, zorder=7,
                                   markeredgecolor="white", markeredgewidth=0.5)
-                    # Red tint on overshoot portion
-                    if task.get("end_date") and task["end_date"] > task["deadline"]:
+                    # Red tint on overshoot portion (use actual end for Complete tasks)
+                    eff_end = (task["actual_end_date"] if is_complete
+                               and task.get("actual_end_date") else task.get("end_date"))
+                    if eff_end and eff_end > task["deadline"]:
                         overshoot_start = deadline_num
-                        overshoot_end = mdates.date2num(task["end_date"]) + 1
+                        overshoot_end = mdates.date2num(eff_end) + 1
                         draw_rounded_bar(ax_gantt, overshoot_start, y_pos,
                                          overshoot_end - overshoot_start,
                                          STYLE["bar_height"], "#D32F2F",
@@ -1689,6 +1766,8 @@ def render_gantt(tasks, team, workstreams, weeks, output_path,
                 person_leave = leave.get(person, set())
                 if person_leave:
                     for d in sorted(person_leave):
+                        if public_holidays and d in public_holidays:
+                            continue
                         d_num = mdates.date2num(d)
                         s_num = mdates.date2num(task["start_date"])
                         e_num = mdates.date2num(task["end_date"])
@@ -1745,10 +1824,11 @@ def render_gantt(tasks, team, workstreams, weeks, output_path,
                                           markerfacecolor="#D32F2F",
                                           markersize=6, markeredgecolor="white",
                                           label="Deadline"))
-    # Confidence dots in legend (if any task has confidence)
-    if any(t.get("confidence") for t in tasks):
+    # Confidence dots in legend (if any non-Complete task has confidence)
+    if any(t.get("confidence") and t["status"] != "Complete" for t in tasks):
         for conf, color in CONFIDENCE_COLORS.items():
-            if any(t.get("confidence") == conf for t in tasks):
+            if any(t.get("confidence") == conf and t["status"] != "Complete"
+                   for t in tasks):
                 legend_handles.append(plt.Line2D([0], [0], marker="o", color="w",
                                                   markerfacecolor=color,
                                                   markersize=5,
@@ -2234,31 +2314,38 @@ def print_summary(tasks, team, workstreams, allocation, weeks, available=None,
                 parts.append(f"{e['days']}d {e['type']} ({e['start'].strftime('%d %b')} - {e['end'].strftime('%d %b')})")
             print(f"    {person}: {', '.join(parts)}")
 
-    # Priority breakdown
+    # Priority breakdown (exclude On Hold — aligns with capacity calculations)
     print()
     print("  By priority:")
     for p in PRIORITY_VALUES:
-        p_tasks = [t for t in tasks if t["priority"] == p]
+        p_tasks = [t for t in tasks if t["priority"] == p and t["status"] != "On Hold"]
         if p_tasks:
             p_days = sum(t["total_days"] for t in p_tasks)
             print(f"    {p}: {len(p_tasks)} task{'s' if len(p_tasks) != 1 else ''} ({p_days:.4g} days)")
 
     # Deadline warnings
-    deadline_tasks = [t for t in tasks if t.get("deadline") and t.get("end_date")]
-    at_risk = [t for t in deadline_tasks if t["end_date"] > t["deadline"]]
+    deadline_tasks = [t for t in tasks if t.get("deadline") and t.get("end_date")
+                      and t["status"] != "On Hold"]
+    at_risk = []
+    for t in deadline_tasks:
+        eff_end = (t["actual_end_date"] if t["status"] == "Complete"
+                   and t.get("actual_end_date") else t["end_date"])
+        if eff_end > t["deadline"]:
+            at_risk.append((t, eff_end))
     if at_risk:
         print()
         print(f"  Deadlines at risk: {len(at_risk)}")
-        for t in at_risk:
+        for t, eff_end in at_risk:
             person_leave = leave.get(t["assigned_to"], set()) if leave else None
             overshoot_days = count_working_days(
-                t["deadline"] + timedelta(days=1), t["end_date"],
+                t["deadline"] + timedelta(days=1), eff_end,
                 public_holidays, person_leave)
             print(f"    WARNING: '{t['task']}' ends {overshoot_days} wd after deadline "
                   f"(deadline: {t['deadline'].strftime('%d %b')})")
 
     # Low confidence tasks
-    low_conf = [t for t in tasks if t.get("confidence") == "Low"]
+    low_conf = [t for t in tasks if t.get("confidence") == "Low"
+                and t["status"] not in ("Complete", "On Hold")]
     if low_conf:
         print()
         print(f"  Low confidence estimates: {len(low_conf)}")
@@ -2288,6 +2375,7 @@ def print_summary(tasks, team, workstreams, allocation, weeks, available=None,
             for w in weeks:
                 concurrent = sum(1 for t in tasks
                                  if t["assigned_to"] == person
+                                 and t["status"] in ("Planned", "In Progress")
                                  and t.get("working_days")
                                  and any(norm_date(wd) >= w and norm_date(wd) < w + timedelta(days=5)
                                          for wd in t["working_days"]))
@@ -2345,13 +2433,22 @@ def main():
         print("Run with --template first to create a template.")
         sys.exit(1)
 
+    # Check file is readable (not locked by another process)
+    try:
+        with open(args.input, 'rb') as f:
+            pass
+    except PermissionError:
+        print(f"  ERROR: Cannot read '{args.input}' \u2014 it may be open in Excel or locked by another process.")
+        print(f"  Close the file and try again.")
+        sys.exit(1)
+
     # Determine output directory
     if args.outdir:
         out_dir = args.outdir
     elif args.output:
         # Deprecated --output: treat as directory
         out_dir = args.output
-        if os.path.splitext(args.output)[1]:  # has file extension — use parent dir
+        if args.output.lower().endswith('.png'):  # looks like a file path — use parent dir
             out_dir = os.path.dirname(args.output) or "output"
         print(f"  NOTE: --output is deprecated. Use --outdir instead.")
     else:
@@ -2418,7 +2515,8 @@ def main():
         filtered = []
         for t in tasks:
             t_start = t["start_date"]
-            t_end = t["end_date"]
+            t_end = (t["actual_end_date"] if t["status"] == "Complete"
+                     and t.get("actual_end_date") else t["end_date"])
             if date_from and t_end < date_from:
                 continue  # task ends before window
             if date_to and t_start > date_to:
@@ -2437,6 +2535,17 @@ def main():
 
     allocation, weeks, available = calculate_capacity(tasks, team, public_holidays, leave)
     print(f"  Weeks covered: {len(weeks)}")
+
+    # Filter leave entries to reporting window (so summary matches date scope)
+    if (date_from or date_to) and leave_entries:
+        if weeks:
+            win_start = weeks[0]
+            win_end = weeks[-1] + timedelta(days=4)
+        else:
+            win_start = date_from or datetime.min
+            win_end = date_to or datetime.max
+        leave_entries = [e for e in leave_entries
+                         if not (e["end"] < win_start or e["start"] > win_end)]
 
     # Summary + schedule suggestions (capture output for summary.txt)
     summary_capture = io.StringIO()

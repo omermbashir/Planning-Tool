@@ -124,7 +124,7 @@ Open `capacity_data.xlsx` and update with your actual tasks and team info.
 
 **Actual End:** (optional) date a Complete task actually finished. Shows planned-vs-actual comparison on the Gantt.
 
-**Blocked By:** (optional) free text for On Hold tasks explaining the blocker.
+**Blocked By:** (optional) free text explaining what's blocking the task. Works with any status — On Hold tasks show blocked duration, Planned/In Progress tasks show a BLOCKED warning in schedule suggestions and on the Gantt.
 
 **Leave Types:** `Annual Leave`, `Sick`, `Training`, `Conference`, `Other`
 
@@ -205,7 +205,8 @@ Adding a new task requires only **6 fields**: Task, Workstream, Assigned To, Sta
 ### Schedule Suggestions
 - Early finishers: recommends pulling forward subsequent tasks
 - Overdue warnings for In Progress tasks past their planned end
-- Blocked duration tracking
+- Blocked duration tracking (On Hold tasks)
+- Blocked task warnings (Planned/In Progress tasks with Blocked By filled)
 - Leave overlap warnings (person has leave during an active task)
 - Spare capacity alerts for future weeks (uses leave-adjusted availability)
 - Concurrent task warnings (3+ tasks per person in the same week)
@@ -222,15 +223,18 @@ Adding a new task requires only **6 fields**: Task, Workstream, Assigned To, Sta
 
 The tool validates your Excel data before generating charts:
 - Checks for missing required columns with clear error messages
-- Non-positive durations are errors (task is skipped with an `ERROR:` message)
+- Non-positive durations are warned and the task is skipped
 - Detects workstream name mismatches with fuzzy suggestions (using `difflib`)
 - Validates assigned team members against the Team sheet
 - Validates hex colour codes on workstreams
-- Warns on unrecognised status or priority values
+- Invalid status values cause an error (valid: Planned, In Progress, Complete, On Hold)
+- Warns on unrecognised priority values
 - Warns if task priority is higher than its workstream priority
 - Validates deadlines (warns if deadline is before start date)
 - Validates leave person names match the Team sheet
 - Warns if a public holiday falls on a weekend
+- Detects duplicate names in Team and Workstreams sheets (warns and keeps first occurrence)
+- Detects file lock (Excel open) with actionable "close the file" message
 - Post-schedule integrity check (end date before start date)
 
 ## File Structure

@@ -80,7 +80,7 @@ SCHEDULE SUGGESTIONS:
 
 ### Requirements
 - Python 3.10+
-- matplotlib, numpy, openpyxl, pandas
+- matplotlib, numpy, openpyxl, pandas, pytest
 
 ### Install Dependencies
 ```bash
@@ -237,15 +237,32 @@ The tool validates your Excel data before generating charts:
 - Detects file lock (Excel open) with actionable "close the file" message
 - Post-schedule integrity check (end date before start date)
 
+## Testing
+
+The test suite covers 157 tests across 6 tiers, derived from 28 bugs found across 9 review rounds:
+
+1. **Pure unit tests** — date parsing, string cleaning, priority sorting, working-day calculations
+2. **Function-level tests** — schedule calculation, capacity allocation, leave/holiday handling
+3. **Integration tests** — Excel I/O round-trips (template generation, data loading, validation)
+4. **End-to-end tests** — full pipeline from Excel input to chart output
+5. **Edge cases** — empty inputs, boundary dates, fractional days, NaN handling
+6. **Regression tests** — specific bugs caught during development, including interaction effects between features
+
+### Run Tests
+```bash
+pytest test_capacity_planner.py -v
+```
+
 ## File Structure
 ```
-capacity_planner.py    # Single script - all logic
-capacity_data.xlsx     # Excel input (generated via --template, then user-maintained)
-requirements.txt       # pip install -r requirements.txt
+capacity_planner.py        # Single script - all logic
+test_capacity_planner.py   # Test suite (157 tests, 6 tiers)
+capacity_data.xlsx         # Excel input (generated via --template, then user-maintained)
+requirements.txt           # pip install -r requirements.txt
 output/
-  capacity_gantt.png   # Gantt chart (standalone)
-  capacity_weekly.png  # Weekly capacity per person
-  capacity_monthly.png # Monthly capacity utilisation
-  roadmap.png          # Strategic roadmap swim lanes
-  summary.txt          # Executive summary + schedule suggestions
+  capacity_gantt.png       # Gantt chart (standalone)
+  capacity_weekly.png      # Weekly capacity per person
+  capacity_monthly.png     # Monthly capacity utilisation
+  roadmap.png              # Strategic roadmap swim lanes
+  summary.txt              # Executive summary + schedule suggestions
 ```

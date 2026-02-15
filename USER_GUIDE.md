@@ -1,4 +1,4 @@
-# User Guide — Capacity Planning Tool
+# User Guide - Capacity Planning Tool
 
 ## Quick Start
 
@@ -11,7 +11,7 @@ This creates `capacity_data.xlsx` with five sheets pre-filled with example data,
 ### Step 2: Edit the Excel file
 Open `capacity_data.xlsx` in Excel and replace the example data with your real team, workstreams, and tasks. The dropdowns and formatting rules will guide you.
 
-**Only 6 mandatory fields per task** — the rest is optional or auto-filled. See the Tasks sheet reference below.
+**Only 6 mandatory fields per task** - the rest is optional or auto-filled. See the Tasks sheet reference below.
 
 ### Step 3: Generate charts
 ```bash
@@ -21,7 +21,7 @@ This reads your Excel data and produces four PNG files in the `output/` folder, 
 
 ---
 
-## Excel Sheets — Column Reference
+## Excel Sheets - Column Reference
 
 ### Team Sheet
 
@@ -52,7 +52,7 @@ This reads your Excel data and produces four PNG files in the `output/` folder, 
 | **Priority** | No | P1-P4. **Inherits from workstream if left blank.** Only fill when a task differs from its workstream. | `P2` |
 | **Status** | Yes | One of: `Planned`, `In Progress`, `Complete`, `On Hold`. Defaults to `Planned` if blank. | `In Progress` |
 | **Actual End** | No | Date the task actually finished. Only relevant for Complete tasks. | `2026-03-14` |
-| **Blocked By** | No | Free text explaining what's blocking the task. Works with any status — On Hold shows blocked duration, Planned/In Progress shows BLOCKED warning. | `Waiting on Data Eng` |
+| **Blocked By** | No | Free text explaining what's blocking the task. Works with any status - On Hold shows blocked duration, Planned/In Progress shows BLOCKED warning. | `Waiting on Data Eng` |
 | **Deadline** | No | Hard delivery date. Shows red diamond on Gantt, console warning if task overshoots. | `2026-03-31` |
 | **Confidence** | No | Estimate quality: `High`, `Medium`, or `Low`. Shows coloured dot on Gantt. | `Medium` |
 | **Notes** | No | Any additional context. | `Scope increased after review` |
@@ -66,7 +66,7 @@ This reads your Excel data and produces four PNG files in the `output/` folder, 
 | **Date** | Yes | The public holiday date. Format: date. | `2026-04-03` |
 | **Name** | No | Description of the holiday. | `Good Friday` |
 
-Public holidays affect **all** team members — dates are treated like weekends (skipped in scheduling).
+Public holidays affect **all** team members - dates are treated like weekends (skipped in scheduling).
 
 ### Leave Sheet (optional)
 
@@ -78,7 +78,7 @@ Public holidays affect **all** team members — dates are treated like weekends 
 | **Type** | Yes | One of: `Annual Leave`, `Sick`, `Training`, `Conference`, `Other` | `Annual Leave` |
 | **Notes** | No | Any additional context. | `Easter week` |
 
-Leave affects only the named person — their tasks automatically extend around leave days.
+Leave affects only the named person - their tasks automatically extend around leave days.
 
 Both the Public Holidays and Leave sheets are **optional**. If they don't exist in your Excel file, the tool works identically to before (no holidays, no leave adjustments). This means existing Excel files continue to work without changes.
 
@@ -115,10 +115,10 @@ Both workstreams and individual tasks have priorities. **Workstream priority alw
 ### Visual emphasis
 | Priority | Bar thickness | Opacity | Font weight | Intent |
 |----------|--------------|---------|-------------|--------|
-| **P1** | Thickest (2.2) | Full (1.0) | Bold | Critical — demands attention |
-| **P2** | Medium (1.5) | Near-full (0.95) | Medium | Important — clearly visible |
-| **P3** | Standard (1.0) | Reduced (0.80) | Normal | Routine — present but subdued |
-| **P4** | Thin (0.8) | Faded (0.65) | Normal | Low — background items |
+| **P1** | Thickest (2.2) | Full (1.0) | Bold | Critical - demands attention |
+| **P2** | Medium (1.5) | Near-full (0.95) | Medium | Important - clearly visible |
+| **P3** | Standard (1.0) | Reduced (0.80) | Normal | Routine - present but subdued |
+| **P4** | Thin (0.8) | Faded (0.65) | Normal | Low - background items |
 
 ### Tip: task priority vs workstream priority
 A P1 task inside a P3 workstream is unusual but allowed. The tool will warn you in the console during validation. The workstream still appears in P3 position, but the task within it will be styled as P1.
@@ -127,7 +127,7 @@ A P1 task inside a P3 workstream is unusual but allowed. The tool will warn you 
 
 ## Deadline & Confidence (Communication Tools)
 
-Both columns are optional. They exist to help you communicate risk and expectations to management. Leave them blank for most tasks — fill only the 2-3 where it matters.
+Both columns are optional. They exist to help you communicate risk and expectations to management. Leave them blank for most tasks - fill only the 2-3 where it matters.
 
 ### Deadline
 
@@ -140,19 +140,19 @@ A hard delivery date. Use it when your boss or stakeholder has said "this must b
 - **Console**: `WARNING: 'Platform Migration' ends 3 days after deadline (deadline: 15 Mar)`
 - **Executive summary**: Count of tasks at risk of missing their deadline.
 
-**Tip**: If you don't fill Deadline, nothing changes — no markers, no warnings.
+**Tip**: If you don't fill Deadline, nothing changes - no markers, no warnings.
 
 ### Confidence
 
-An estimate quality rating. Use it for tasks where the estimate might be wrong — new technology, external dependencies, vague requirements.
+An estimate quality rating. Use it for tasks where the estimate might be wrong - new technology, external dependencies, vague requirements.
 
 **Setup**: Fill the **Confidence** column with `High`, `Medium`, or `Low`.
 
 **What you'll see**:
-- **Gantt chart**: Small coloured dot next to the task label — green (High), amber (Medium), red (Low)
+- **Gantt chart**: Small coloured dot next to the task label - green (High), amber (Medium), red (Low)
 - **Console**: Low-confidence tasks are listed in the executive summary so you're aware of where surprises might come from.
 
-**Tip**: High confidence = "done this before, estimate is solid". Low confidence = "first time, could easily double". This sets expectations early — when a low-confidence task overruns, it's not a surprise.
+**Tip**: High confidence = "done this before, estimate is solid". Low confidence = "first time, could easily double". This sets expectations early - when a low-confidence task overruns, it's not a surprise.
 
 ---
 
@@ -160,10 +160,10 @@ An estimate quality rating. Use it for tasks where the estimate might be wrong �
 
 | Status | Appearance | Description |
 |--------|-----------|-------------|
-| **In Progress** | Vivid workstream colour, full priority alpha | Active work — stands out clearly |
-| **Planned** | Workstream colour at 70% of priority alpha | Future work — visibly muted compared to In Progress |
-| **On Hold** | Blue-grey fill, cross-hatch pattern, dashed border | Blocked — neutral "parked" look, instantly recognisable |
-| **Complete** | Workstream colour at 35% alpha, grey edge | Done — faded into the background |
+| **In Progress** | Vivid workstream colour, full priority alpha | Active work - stands out clearly |
+| **Planned** | Workstream colour at 70% of priority alpha | Future work - visibly muted compared to In Progress |
+| **On Hold** | Blue-grey fill, cross-hatch pattern, dashed border | Blocked - neutral "parked" look, instantly recognisable |
+| **Complete** | Workstream colour at 35% alpha, grey edge | Done - faded into the background |
 
 ---
 
@@ -172,11 +172,11 @@ An estimate quality rating. Use it for tasks where the estimate might be wrong �
 Track how estimates change over time by maintaining both **Original Days** and **Total Days**.
 
 ### Setup
-1. When you first create a task, just fill **Total Days** — Original Days auto-fills to the same value
-2. As scope changes, update **Total Days** only — Original Days stays untouched automatically
+1. When you first create a task, just fill **Total Days** - Original Days auto-fills to the same value
+2. As scope changes, update **Total Days** only - Original Days stays untouched automatically
 
 ### What you'll see
-- **Gantt chart**: Drifted tasks show a label like `(was 10d, now 15d +50%)` — coloured amber for scope increase, green for scope decrease
+- **Gantt chart**: Drifted tasks show a label like `(was 10d, now 15d +50%)` - coloured amber for scope increase, green for scope decrease
 - **Executive summary**: Total drift across all tasks, e.g. `Estimation drift: +5.5 days (+18%) across 3 tasks`
 
 ### Tip
@@ -199,7 +199,7 @@ For Complete tasks, you can record when they actually finished to compare planne
   - Variance label: `+3d late` (red) or `-2d early` (green)
 
 ### Tip
-If you leave Actual End blank for a Complete task, it just shows a single faded bar at the planned position — no comparison is drawn.
+If you leave Actual End blank for a Complete task, it just shows a single faded bar at the planned position - no comparison is drawn.
 
 ---
 
@@ -209,7 +209,7 @@ If you leave Actual End blank for a Complete task, it just shows a single faded 
 1. Change Status to `On Hold` in Excel
 2. Optionally fill **Blocked By** with the reason (e.g. "Waiting on Data Eng", "Depends on Platform team")
 
-You can also fill **Blocked By** on tasks that are `Planned` or `In Progress` — for example, when a task is partially blocked but work continues. The tool will show a BLOCKED warning in schedule suggestions and a "Blocked:" label on the Gantt.
+You can also fill **Blocked By** on tasks that are `Planned` or `In Progress` - for example, when a task is partially blocked but work continues. The tool will show a BLOCKED warning in schedule suggestions and a "Blocked:" label on the Gantt.
 
 ### How to unblock
 1. Change Status back to `In Progress` (or `Planned` if work hasn't started yet)
@@ -217,9 +217,9 @@ You can also fill **Blocked By** on tasks that are `Planned` or `In Progress` �
 3. Adjust the Start Date if the block has pushed it back
 
 ### What you'll see
-- **Gantt chart**: On Hold tasks show as blue-grey cross-hatched bars with dashed border. Blocked duration and reason shown in the label. No artificial cap — a task blocked for 15 days on a 5-day estimate shows the full 15 days. Planned/In Progress tasks with Blocked By show a "Blocked:" label.
+- **Gantt chart**: On Hold tasks show as blue-grey cross-hatched bars with dashed border. Blocked duration and reason shown in the label. No artificial cap - a task blocked for 15 days on a 5-day estimate shows the full 15 days. Planned/In Progress tasks with Blocked By show a "Blocked:" label.
 - **Roadmap**: Warning marker at the blocked task's position within the workstream swim lane.
-- **Console**: On Hold: `{task} has been on hold for N working days` with the blocker reason. Planned/In Progress with Blocked By: `BLOCKED: {task} — {reason}`.
+- **Console**: On Hold: `{task} has been on hold for N working days` with the blocker reason. Planned/In Progress with Blocked By: `BLOCKED: {task} - {reason}`.
 
 ---
 
@@ -250,7 +250,7 @@ Account for time when team members aren't available. The tool automatically adju
 1. Go to the **Leave** sheet
 2. Add one row per leave period: Person, Start Date, End Date, Type, Notes
 3. The date range is expanded into individual weekdays at load time
-4. Only the named person is affected — their tasks extend around leave days
+4. Only the named person is affected - their tasks extend around leave days
 
 ### How it affects scheduling
 - A 5-day task starting Monday, with Wednesday being a public holiday: Mon, Tue, Thu, Fri, next Mon
@@ -285,7 +285,7 @@ Both sheets are optional. If you don't have any holidays or leave to track, simp
 - Today line (solid red vertical line)
 - Public holiday dotted lines (purple)
 - Leave day triangle markers (▼) above task rows
-- Deadline diamond markers (red ◆) — red overshoot tint if task extends past deadline
+- Deadline diamond markers (red ◆) - red overshoot tint if task extends past deadline
 - Confidence dots: green (High), amber (Medium), red (Low) next to task labels
 - Long task names truncated at ~40 characters with "..."
 
@@ -360,7 +360,7 @@ After chart generation, prints which files were written:
 # Generate the Excel template (overwrites existing capacity_data.xlsx)
 python capacity_planner.py --template
 
-# Generate all charts (default — 4 PNGs)
+# Generate all charts (default - 4 PNGs)
 python capacity_planner.py
 
 # Generate specific charts only
@@ -388,14 +388,14 @@ python capacity_planner.py --charts gantt weekly --outdir reports/ --from 2026-0
 
 ## Tips
 
-- **Re-run after every Excel update** — the tool reads fresh data each time
-- **Only 6 fields to add a task** — Task, Workstream, Assigned To, Start Date, Total Days, Status. The rest is optional.
-- **Leave Priority blank** — it inherits from the workstream. Only fill it when a task is unusually urgent or low-priority.
-- **Leave Original Days blank** — it auto-fills from Total Days. Only matters later if you update Total Days (drift tracking).
-- **Use P1 sparingly** — if everything is P1, nothing stands out
-- **Deadline and Confidence for key tasks only** — don't fill these for routine tasks; save them for the 2-3 where you need to set expectations with your boss
-- **Check console output** — the schedule suggestions catch things the charts don't show (overdue tasks, spare capacity, deadline warnings)
-- **Fractional days for small tasks** — 0.5 for a half-day review, 1.5 for a day-and-a-half workshop
-- **Workstream names must match exactly** — if a task references a workstream that doesn't exist on the Workstreams sheet, validation will flag it with a fuzzy match suggestion
-- **Use `--from`/`--to` for focused views** — generate a "next quarter" chart without removing tasks from your Excel
-- **Use `--outdir` for reports** — save charts to a specific folder for sharing
+- **Re-run after every Excel update** - the tool reads fresh data each time
+- **Only 6 fields to add a task** - Task, Workstream, Assigned To, Start Date, Total Days, Status. The rest is optional.
+- **Leave Priority blank** - it inherits from the workstream. Only fill it when a task is unusually urgent or low-priority.
+- **Leave Original Days blank** - it auto-fills from Total Days. Only matters later if you update Total Days (drift tracking).
+- **Use P1 sparingly** - if everything is P1, nothing stands out
+- **Deadline and Confidence for key tasks only** - don't fill these for routine tasks; save them for the 2-3 where you need to set expectations with your boss
+- **Check console output** - the schedule suggestions catch things the charts don't show (overdue tasks, spare capacity, deadline warnings)
+- **Fractional days for small tasks** - 0.5 for a half-day review, 1.5 for a day-and-a-half workshop
+- **Workstream names must match exactly** - if a task references a workstream that doesn't exist on the Workstreams sheet, validation will flag it with a fuzzy match suggestion
+- **Use `--from`/`--to` for focused views** - generate a "next quarter" chart without removing tasks from your Excel
+- **Use `--outdir` for reports** - save charts to a specific folder for sharing

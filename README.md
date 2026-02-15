@@ -2,6 +2,10 @@
 
 A Python tool for visualising team workload and capacity. Reads work requests from an Excel file, calculates weekly and monthly capacity, and outputs professional presentation-ready charts as PNGs. Supports public holidays, annual leave, deadlines, and risk/confidence tracking.
 
+## Why I Built This
+
+On any given week I'm juggling around 10 concurrent tasks while managing a small team. My leadership team wanted clearer visibility on capacity, timelines, and long-term planning, but building slides and reports every week would add too much extra overhead. We already track work in Jira, but they wanted Gantt charts, capacity views, and a roadmap. So I built a tool to bridge that gap. Update one spreadsheet and the script generates everything in seconds.
+
 ## What It Generates
 
 ### 1. Gantt Chart (`capacity_gantt.png`)
@@ -9,7 +13,7 @@ A Python tool for visualising team workload and capacity. Reads work requests fr
 - Priority badges on workstream headers. Status symbols, estimation drift labels (coloured amber/green), planned-vs-actual ghost bars for completed tasks.
 - Weekend shading (light grey bands), public holiday dotted lines, and per-person leave markers (triangles).
 - Deadline diamond markers (red) with red-tinted overshoot when a task extends past its deadline.
-- Confidence dots next to task labels — green (High), amber (Medium), red (Low).
+- Confidence dots next to task labels - green (High), amber (Medium), red (Low).
 - Long task names automatically truncated to keep the chart readable.
 
 ![Gantt Chart](examples/capacity_gantt.png)
@@ -40,7 +44,7 @@ A Python tool for visualising team workload and capacity. Reads work requests fr
 ![Strategic Roadmap](examples/roadmap.png)
 
 ### Console Output
-- **Executive summary**: task counts, public holiday count, leave-adjusted utilisation per person, over-capacity weeks with per-person detail, leave summary with types, priority breakdown, estimation drift totals, deadline warnings, low-confidence task flags, concurrent task awareness
+- **Executive summary**: task counts, public holiday count, leave-adjusted utilisation per person, over-capacity weeks with per-person detail, leave summary with types, priority breakdown, estimation drift totals, deadline warnings, low-confidence task flags, concurrent task warnings
 - **Schedule suggestions**: early finishers, overdue tasks, blocked duration, leave overlaps, spare capacity gaps
 - **Output file list**: which PNGs were written
 
@@ -102,11 +106,11 @@ pip install -r requirements.txt
 python capacity_planner.py --template
 ```
 Creates `capacity_data.xlsx` with five sheets and example data:
-- **Team** — team members and available days per week
-- **Workstreams** — workstream names, display colours, and priorities (P1-P4)
-- **Tasks** — tasks with workstream, assignee, dates, estimates, priority, status, deadline, confidence, and more
-- **Public Holidays** — dates that affect all team members (e.g. bank holidays)
-- **Leave** — per-person leave with date ranges, type, and notes
+- **Team** - team members and available days per week
+- **Workstreams** - workstream names, display colours, and priorities (P1-P4)
+- **Tasks** - tasks with workstream, assignee, dates, estimates, priority, status, deadline, confidence, and more
+- **Public Holidays** - dates that affect all team members (e.g. bank holidays)
+- **Leave** - per-person leave with date ranges, type, and notes
 
 The template includes:
 - **Dropdown validations** for Status, Priority, Workstream, Assigned To, Leave Type, and Confidence
@@ -124,21 +128,21 @@ Open `capacity_data.xlsx` and update with your actual tasks and team info.
 
 **Total Days:** working days the task takes (supports fractions like 2.5). Distributed across weekdays automatically, skipping weekends and holidays/leave.
 
-**Original Days:** the initial estimate — auto-fills from Total Days if left blank. Only update Total Days as scope changes to track estimation drift.
+**Original Days:** the initial estimate - auto-fills from Total Days if left blank. Only update Total Days as scope changes to track estimation drift.
 
-**Deadline:** (optional) hard date — shows red diamond on Gantt, console warning if task overshoots.
+**Deadline:** (optional) hard date - shows red diamond on Gantt, console warning if task overshoots.
 
-**Confidence:** (optional) `High`, `Medium`, or `Low` — shows coloured dot on Gantt, flags low-confidence tasks in console.
+**Confidence:** (optional) `High`, `Medium`, or `Low` - shows coloured dot on Gantt, flags low-confidence tasks in console.
 
 **Actual End:** (optional) date a Complete task actually finished. Shows planned-vs-actual comparison on the Gantt.
 
-**Blocked By:** (optional) free text explaining what's blocking the task. Works with any status — On Hold tasks show blocked duration, Planned/In Progress tasks show a BLOCKED warning in schedule suggestions and on the Gantt.
+**Blocked By:** (optional) free text explaining what's blocking the task. Works with any status - On Hold tasks show blocked duration, Planned/In Progress tasks show a BLOCKED warning in schedule suggestions and on the Gantt.
 
 **Leave Types:** `Annual Leave`, `Sick`, `Training`, `Conference`, `Other`
 
 ### 3. Generate Charts
 ```bash
-# Generate all charts (default — 4 PNGs)
+# Generate all charts (default - 4 PNGs)
 python capacity_planner.py
 
 # Generate specific charts only
@@ -163,9 +167,9 @@ python capacity_planner.py --charts gantt weekly --outdir reports/ --from 2026-0
 
 ### Smart Defaults (Ease of Use)
 Adding a new task requires only **6 fields**: Task, Workstream, Assigned To, Start Date, Total Days, Status. Everything else is optional:
-- **Priority** inherits from the workstream if left blank — only fill when a task differs
-- **Original Days** auto-fills from Total Days if left blank — drift tracking activates automatically when you later update Total Days
-- Deadline, Confidence, Actual End, Blocked By, Notes — fill only when relevant
+- **Priority** inherits from the workstream if left blank - only fill when a task differs
+- **Original Days** auto-fills from Total Days if left blank - drift tracking activates automatically when you later update Total Days
+- Deadline, Confidence, Actual End, Blocked By, Notes - fill only when relevant
 
 ### Priority System (P1-P4)
 - Both workstreams and tasks have priorities
@@ -181,20 +185,20 @@ Adding a new task requires only **6 fields**: Task, Workstream, Assigned To, Sta
 - **Confidence**: optional High/Medium/Low rating for estimate quality
   - Coloured dot on Gantt: green (High), amber (Medium), red (Low)
   - Low-confidence tasks flagged in console output
-- Both are communication tools for managing expectations — fill only for the 2-3 tasks where it matters
+- Both are communication tools for managing expectations - fill only for the 2-3 tasks where it matters
 
 ### Public Holidays & Leave
-- **Public Holidays sheet** (optional): dates that affect all team members — tasks schedule around them
+- **Public Holidays sheet** (optional): dates that affect all team members - tasks schedule around them
 - **Leave sheet** (optional): per-person leave with date ranges and type
 - Tasks automatically extend around leave/holiday periods (treated like weekends)
 - Capacity calculations adjust for reduced availability
-- Both sheets are **backwards compatible** — if missing, the tool works identically to before
+- Both sheets are **backwards compatible** - if missing, the tool works identically to before
 - Visual indicators: holiday dotted lines on Gantt, leave triangle markers, capacity line dips, holiday week shading on weekly chart
 - Leave summary in executive summary shows per-person leave with types
 
 ### Estimation Drift Tracking
 - Original Days vs Total Days shows scope changes
-- Drift labels on Gantt bars: "(was 10d, now 15d +50%)" — coloured amber (increase) or green (decrease)
+- Drift labels on Gantt bars: "(was 10d, now 15d +50%)" - coloured amber (increase) or green (decrease)
 - Executive summary totals across all drifted tasks
 
 ### Planned vs Actual
@@ -204,9 +208,9 @@ Adding a new task requires only **6 fields**: Task, Workstream, Assigned To, Sta
   - Variance label: "+3d late" (red) or "-2d early" (green)
 
 ### Blocked/On Hold Tracking
-- On Hold tasks shown in neutral blue-grey with cross-hatch pattern and dashed border — visually distinct from active work
+- On Hold tasks shown in neutral blue-grey with cross-hatch pattern and dashed border - visually distinct from active work
 - Planned tasks rendered at reduced opacity vs In Progress for clear status hierarchy
-- Blocked duration calculated and displayed (no artificial cap — a task can be blocked longer than its estimate)
+- Blocked duration calculated and displayed (no artificial cap - a task can be blocked longer than its estimate)
 - Blocked By reason shown if provided
 - Warning markers on roadmap for workstreams with blocked tasks
 
@@ -247,14 +251,16 @@ The tool validates your Excel data before generating charts:
 
 ## Testing
 
-The test suite covers 157 tests across 6 tiers, derived from 28 bugs found across 9 review rounds:
+The test suite covers 157 tests across 6 tiers, built from 42 bugs found and fixed across 20 rounds of code review:
 
-1. **Pure unit tests** — date parsing, string cleaning, priority sorting, working-day calculations
-2. **Function-level tests** — schedule calculation, capacity allocation, leave/holiday handling
-3. **Integration tests** — Excel I/O round-trips (template generation, data loading, validation)
-4. **End-to-end tests** — full pipeline from Excel input to chart output
-5. **Edge cases** — empty inputs, boundary dates, fractional days, NaN handling
-6. **Regression tests** — specific bugs caught during development, including interaction effects between features
+1. **Pure unit tests** - date parsing, string cleaning, priority sorting, working-day calculations
+2. **Function-level tests** - schedule calculation, capacity allocation, leave/holiday handling
+3. **Integration tests** - Excel I/O round-trips (template generation, data loading, validation)
+4. **End-to-end tests** - full pipeline from Excel input to chart output
+5. **Edge cases** - empty inputs, boundary dates, fractional days, NaN handling
+6. **Regression tests** - specific bugs caught during development, including interaction effects between features
+
+See [QA & Testing](QA_AND_TESTING.md) for the full review process, bug family analysis, and testing methodology.
 
 ### Run Tests
 ```bash
@@ -265,6 +271,7 @@ pytest test_capacity_planner.py -v
 ```
 capacity_planner.py        # Single script - all logic
 test_capacity_planner.py   # Test suite (157 tests, 6 tiers)
+QA_AND_TESTING.md          # Review process, bug analysis, testing methodology
 capacity_data.xlsx         # Excel input (generated via --template, then user-maintained)
 requirements.txt           # pip install -r requirements.txt
 examples/                  # Example chart output (from template data)

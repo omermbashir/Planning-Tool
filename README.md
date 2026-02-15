@@ -4,7 +4,7 @@ A Python tool for visualising team workload and capacity. Reads work requests fr
 
 ## Why I Built This
 
-On any given week I'm juggling around 10 concurrent tasks while managing a small team. My leadership team wanted clearer visibility on capacity, timelines, and long-term planning, but building slides and reports every week would add too much extra overhead. We already track work in Jira, but they wanted Gantt charts, capacity views, and a roadmap. So I built a tool to bridge that gap. Update one spreadsheet and the script generates everything in seconds.
+On any given week I'm juggling around 10 concurrent tasks while managing a small team. My leadership team wanted clearer visibility on capacity, timelines, and long-term planning, but building slides and reports every week would add too much extra overhead. We already track work in Jira, but they wanted Gantt charts, capacity views, and a roadmap. So I built a tool to bridge that gap. All I need to do now is update one spreadsheet and the script generates everything in seconds.
 
 ## What It Generates
 

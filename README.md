@@ -12,6 +12,8 @@ A Python tool for visualising team workload and capacity. Reads work requests fr
 - Confidence dots next to task labels — green (High), amber (Medium), red (Low).
 - Long task names automatically truncated to keep the chart readable.
 
+![Gantt Chart](examples/capacity_gantt.png)
+
 ### 2. Weekly Capacity (`capacity_weekly.png`)
 - Per-person side-by-side bars showing days allocated per week.
 - Individual per-person capacity lines (dip during leave/holiday weeks).
@@ -19,17 +21,23 @@ A Python tool for visualising team workload and capacity. Reads work requests fr
 - Over-capacity bars highlighted in red with overshoot annotation (e.g. "+1.5d").
 - Utilisation percentage labels per person.
 
+![Weekly Capacity](examples/capacity_weekly.png)
+
 ### 3. Monthly Capacity Overview (`capacity_monthly.png`)
 - Side-by-side bars per team member showing days allocated per month.
 - Available capacity line (adjusts for working days, public holidays, and leave).
 - Utilisation percentage labels. Per-person over-capacity highlighting in red.
 - Leave day annotations on months with significant leave.
 
+![Monthly Capacity](examples/capacity_monthly.png)
+
 ### 4. Strategic Roadmap (`roadmap.png`)
 - Swim-lane view with one bar per workstream, sorted by priority (P1 at top).
 - Priority badges on y-axis labels. Activity density shading.
 - Diamond markers at each task start. Blocked task warning markers. Quarter boundary lines.
 - Designed for exec-level conversations.
+
+![Strategic Roadmap](examples/roadmap.png)
 
 ### Console Output
 - **Executive summary**: task counts, public holiday count, leave-adjusted utilisation per person, over-capacity weeks with per-person detail, leave summary with types, priority breakdown, estimation drift totals, deadline warnings, low-confidence task flags, concurrent task awareness
@@ -259,10 +267,15 @@ capacity_planner.py        # Single script - all logic
 test_capacity_planner.py   # Test suite (157 tests, 6 tiers)
 capacity_data.xlsx         # Excel input (generated via --template, then user-maintained)
 requirements.txt           # pip install -r requirements.txt
-output/
-  capacity_gantt.png       # Gantt chart (standalone)
-  capacity_weekly.png      # Weekly capacity per person
-  capacity_monthly.png     # Monthly capacity utilisation
-  roadmap.png              # Strategic roadmap swim lanes
-  summary.txt              # Executive summary + schedule suggestions
+examples/                  # Example chart output (from template data)
+  capacity_gantt.png
+  capacity_weekly.png
+  capacity_monthly.png
+  roadmap.png
+output/                    # Your generated output (gitignored)
+  capacity_gantt.png
+  capacity_weekly.png
+  capacity_monthly.png
+  roadmap.png
+  summary.txt
 ```
